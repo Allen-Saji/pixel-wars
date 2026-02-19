@@ -11,7 +11,7 @@ pub use instructions::delegate_canvas::*;
 pub use instructions::place_pixel::*;
 pub use instructions::end_round::*;
 
-declare_id!("DTixMqrK6NTWSjVVCeLWojjiHjffRLcVFCdk5LorvR8K");
+declare_id!("5XGbapaUWi6ViSxcCY3Ud7J7RbNdB4UNYtSr761jxWH2");
 
 #[program]
 pub mod pixel_wars {

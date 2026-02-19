@@ -3,3 +3,5 @@ target/
 node_modules/
 .DS_Store
 *.log
+test-ledger/
+archive/
