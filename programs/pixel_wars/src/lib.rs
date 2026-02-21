@@ -1,4 +1,5 @@
 use anchor_lang::prelude::*;
+use ephemeral_rollups_sdk::anchor::ephemeral;
 
 pub mod state;
 pub mod errors;
@@ -13,6 +14,7 @@ pub use instructions::end_round::*;
 
 declare_id!("5XGbapaUWi6ViSxcCY3Ud7J7RbNdB4UNYtSr761jxWH2");
 
+#[ephemeral]
 #[program]
 pub mod pixel_wars {
     use super::*;
