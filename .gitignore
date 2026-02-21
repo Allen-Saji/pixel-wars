@@ -5,3 +5,8 @@ node_modules/
 *.log
 test-ledger/
 archive/
+agents/keys/
+
+.claude
+
+
