@@ -28,4 +28,4 @@ export const SEED_ROUND = "round";
 export const L1_RPC_URL =
   process.env.NEXT_PUBLIC_RPC_URL || "https://api.devnet.solana.com";
 export const ER_RPC_URL =
-  process.env.NEXT_PUBLIC_ER_RPC_URL || "https://devnet-rpc.magicblock.app";
+  process.env.NEXT_PUBLIC_ER_RPC_URL || "https://devnet.magicblock.app";

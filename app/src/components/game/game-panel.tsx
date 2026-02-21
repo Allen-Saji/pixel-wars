@@ -5,7 +5,6 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { PixelCanvas } from "@/components/canvas/pixel-canvas";
 import { ColorPicker } from "@/components/canvas/color-picker";
 import { RoundInfoCard } from "@/components/game/round-info";
-import { PlayerStatsCard } from "@/components/game/player-stats";
 import { AdminPanel } from "@/components/admin/admin-panel";
 import { useGame } from "@/lib/use-game";
 import { toast } from "sonner";
@@ -15,7 +14,6 @@ export function GamePanel() {
     gameConfig,
     canvasData,
     roundInfo,
-    playerStats,
     loading,
     cooldownEnd,
     isAdmin,
@@ -23,6 +21,7 @@ export function GamePanel() {
     placePixel,
     initialize,
     startRound,
+    delegateCanvas,
     endRound,
   } = useGame();
 
@@ -82,18 +81,13 @@ export function GamePanel() {
           roundInfo={roundInfo}
           totalPlacements={canvasData?.totalPlacements}
         />
-        <PlayerStatsCard
-          stats={playerStats}
-          cooldownEnd={cooldownEnd}
-          connected={!!wallet.publicKey}
-          ephemeralKey={ephemeralPublicKey}
-        />
         {(isAdmin || !gameConfig) && (
           <AdminPanel
             gameConfig={gameConfig}
             isAdmin={isAdmin || !gameConfig}
             onInitialize={initialize}
             onStartRound={startRound}
+            onDelegateCanvas={delegateCanvas}
             onEndRound={endRound}
           />
         )}

@@ -21,7 +21,7 @@
       ],
       "accounts": [
         {
-          "name": "authority",
+          "name": "payer",
           "writable": true,
           "signer": true
         },
@@ -44,34 +44,157 @@
           }
         },
         {
-          "name": "canvas",
+          "name": "buffer_pda",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  117,
+                  102,
+                  102,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pda"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                67,
+                47,
+                206,
+                133,
+                145,
+                249,
+                117,
+                201,
+                235,
+                5,
+                244,
+                246,
+                20,
+                178,
+                182,
+                219,
+                132,
+                238,
+                57,
+                224,
+                20,
+                244,
+                77,
+                30,
+                98,
+                217,
+                106,
+                254,
+                152,
+                54,
+                145,
+                45
+              ]
+            }
+          }
+        },
+        {
+          "name": "delegation_record_pda",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  101,
+                  108,
+                  101,
+                  103,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pda"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "delegation_program"
+            }
+          }
+        },
+        {
+          "name": "delegation_metadata_pda",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  101,
+                  108,
+                  101,
+                  103,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110,
+                  45,
+                  109,
+                  101,
+                  116,
+                  97,
+                  100,
+                  97,
+                  116,
+                  97
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pda"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "delegation_program"
+            }
+          }
+        },
+        {
+          "name": "pda",
           "docs": [
-            "delegation CPI changes the owner mid-instruction."
+            "Canvas is zero_copy and the delegation CPI changes ownership."
           ],
           "writable": true
+        },
+        {
+          "name": "validator"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
         },
         {
           "name": "owner_program",
           "address": "5XGbapaUWi6ViSxcCY3Ud7J7RbNdB4UNYtSr761jxWH2"
         },
         {
-          "name": "buffer",
-          "writable": true
-        },
-        {
-          "name": "delegation_record",
-          "writable": true
-        },
-        {
-          "name": "delegation_metadata",
-          "writable": true
-        },
-        {
-          "name": "delegation_program"
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
+          "name": "delegation_program",
+          "address": "DELeGGvXpWV2fqJUhqcF5ZSYMS4JTLjteaAMARRSaeSh"
         }
       ],
       "args": []
@@ -213,7 +336,6 @@
       "accounts": [
         {
           "name": "player",
-          "writable": true,
           "signer": true
         },
         {
@@ -261,41 +383,6 @@
               }
             ]
           }
-        },
-        {
-          "name": "player_stats",
-          "docs": [
-            "Player stats — init if first placement this round."
-          ],
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  108,
-                  97,
-                  121,
-                  101,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "game_config.current_round",
-                "account": "GameConfig"
-              },
-              {
-                "kind": "account",
-                "path": "player"
-              }
-            ]
-          }
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
@@ -318,6 +405,43 @@
         {
           "name": "b",
           "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "process_undelegation",
+      "discriminator": [
+        196,
+        28,
+        41,
+        206,
+        48,
+        37,
+        51,
+        167
+      ],
+      "accounts": [
+        {
+          "name": "base_account",
+          "writable": true
+        },
+        {
+          "name": "buffer"
+        },
+        {
+          "name": "payer",
+          "writable": true
+        },
+        {
+          "name": "system_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "account_seeds",
+          "type": {
+            "vec": "bytes"
+          }
         }
       ]
     },
@@ -402,19 +526,6 @@
         69,
         96,
         133
-      ]
-    },
-    {
-      "name": "PlayerStats",
-      "discriminator": [
-        169,
-        146,
-        242,
-        176,
-        102,
-        118,
-        231,
-        172
       ]
     },
     {
@@ -558,52 +669,6 @@
               "Whether a round is currently active"
             ],
             "type": "bool"
-          },
-          {
-            "name": "bump",
-            "docs": [
-              "Bump seed"
-            ],
-            "type": "u8"
-          }
-        ]
-      }
-    },
-    {
-      "name": "PlayerStats",
-      "docs": [
-        "Per-player stats for a round"
-      ],
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "player",
-            "docs": [
-              "Player pubkey"
-            ],
-            "type": "pubkey"
-          },
-          {
-            "name": "round",
-            "docs": [
-              "Round number"
-            ],
-            "type": "u32"
-          },
-          {
-            "name": "pixels_placed",
-            "docs": [
-              "Total pixels placed"
-            ],
-            "type": "u32"
-          },
-          {
-            "name": "last_placement_slot",
-            "docs": [
-              "Last placement slot (for rate limiting)"
-            ],
-            "type": "u64"
           },
           {
             "name": "bump",

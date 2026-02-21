@@ -27,7 +27,7 @@ export type PixelWars = {
       ],
       "accounts": [
         {
-          "name": "authority",
+          "name": "payer",
           "writable": true,
           "signer": true
         },
@@ -50,34 +50,157 @@ export type PixelWars = {
           }
         },
         {
-          "name": "canvas",
+          "name": "bufferPda",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  117,
+                  102,
+                  102,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pda"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                67,
+                47,
+                206,
+                133,
+                145,
+                249,
+                117,
+                201,
+                235,
+                5,
+                244,
+                246,
+                20,
+                178,
+                182,
+                219,
+                132,
+                238,
+                57,
+                224,
+                20,
+                244,
+                77,
+                30,
+                98,
+                217,
+                106,
+                254,
+                152,
+                54,
+                145,
+                45
+              ]
+            }
+          }
+        },
+        {
+          "name": "delegationRecordPda",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  101,
+                  108,
+                  101,
+                  103,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pda"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "delegationProgram"
+            }
+          }
+        },
+        {
+          "name": "delegationMetadataPda",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  101,
+                  108,
+                  101,
+                  103,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110,
+                  45,
+                  109,
+                  101,
+                  116,
+                  97,
+                  100,
+                  97,
+                  116,
+                  97
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "pda"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "delegationProgram"
+            }
+          }
+        },
+        {
+          "name": "pda",
           "docs": [
-            "delegation CPI changes the owner mid-instruction."
+            "Canvas is zero_copy and the delegation CPI changes ownership."
           ],
           "writable": true
+        },
+        {
+          "name": "validator"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
         },
         {
           "name": "ownerProgram",
           "address": "5XGbapaUWi6ViSxcCY3Ud7J7RbNdB4UNYtSr761jxWH2"
         },
         {
-          "name": "buffer",
-          "writable": true
-        },
-        {
-          "name": "delegationRecord",
-          "writable": true
-        },
-        {
-          "name": "delegationMetadata",
-          "writable": true
-        },
-        {
-          "name": "delegationProgram"
-        },
-        {
-          "name": "systemProgram",
-          "address": "11111111111111111111111111111111"
+          "name": "delegationProgram",
+          "address": "DELeGGvXpWV2fqJUhqcF5ZSYMS4JTLjteaAMARRSaeSh"
         }
       ],
       "args": []
@@ -219,7 +342,6 @@ export type PixelWars = {
       "accounts": [
         {
           "name": "player",
-          "writable": true,
           "signer": true
         },
         {
@@ -267,41 +389,6 @@ export type PixelWars = {
               }
             ]
           }
-        },
-        {
-          "name": "playerStats",
-          "docs": [
-            "Player stats — init if first placement this round."
-          ],
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  108,
-                  97,
-                  121,
-                  101,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "game_config.current_round",
-                "account": "gameConfig"
-              },
-              {
-                "kind": "account",
-                "path": "player"
-              }
-            ]
-          }
-        },
-        {
-          "name": "systemProgram",
-          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
@@ -324,6 +411,43 @@ export type PixelWars = {
         {
           "name": "b",
           "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "processUndelegation",
+      "discriminator": [
+        196,
+        28,
+        41,
+        206,
+        48,
+        37,
+        51,
+        167
+      ],
+      "accounts": [
+        {
+          "name": "baseAccount",
+          "writable": true
+        },
+        {
+          "name": "buffer"
+        },
+        {
+          "name": "payer",
+          "writable": true
+        },
+        {
+          "name": "systemProgram"
+        }
+      ],
+      "args": [
+        {
+          "name": "accountSeeds",
+          "type": {
+            "vec": "bytes"
+          }
         }
       ]
     },
@@ -408,19 +532,6 @@ export type PixelWars = {
         69,
         96,
         133
-      ]
-    },
-    {
-      "name": "playerStats",
-      "discriminator": [
-        169,
-        146,
-        242,
-        176,
-        102,
-        118,
-        231,
-        172
       ]
     },
     {
@@ -564,52 +675,6 @@ export type PixelWars = {
               "Whether a round is currently active"
             ],
             "type": "bool"
-          },
-          {
-            "name": "bump",
-            "docs": [
-              "Bump seed"
-            ],
-            "type": "u8"
-          }
-        ]
-      }
-    },
-    {
-      "name": "playerStats",
-      "docs": [
-        "Per-player stats for a round"
-      ],
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "player",
-            "docs": [
-              "Player pubkey"
-            ],
-            "type": "pubkey"
-          },
-          {
-            "name": "round",
-            "docs": [
-              "Round number"
-            ],
-            "type": "u32"
-          },
-          {
-            "name": "pixelsPlaced",
-            "docs": [
-              "Total pixels placed"
-            ],
-            "type": "u32"
-          },
-          {
-            "name": "lastPlacementSlot",
-            "docs": [
-              "Last placement slot (for rate limiting)"
-            ],
-            "type": "u64"
           },
           {
             "name": "bump",

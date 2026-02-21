@@ -16,13 +16,13 @@ import {
   findConfigPDA,
   findCanvasPDA,
   findRoundPDA,
-  findPlayerStatsPDA,
 } from "./pda";
 import { parseCanvasAccount, type CanvasData } from "./canvas-reader";
 import {
   CANVAS_WIDTH,
   BYTES_PER_PIXEL,
   PLACEMENT_COOLDOWN_MS,
+  PROGRAM_ID,
   ER_RPC_URL,
 } from "./constants";
 
@@ -38,11 +38,6 @@ export interface RoundInfo {
   endSlot: number;
   totalPlacements: number;
   ended: boolean;
-}
-
-export interface PlayerStatsData {
-  pixelsPlaced: number;
-  lastPlacementSlot: number;
 }
 
 /**
@@ -78,7 +73,6 @@ export function useGame() {
   const [gameConfig, setGameConfig] = useState<GameConfig | null>(null);
   const [canvasData, setCanvasData] = useState<CanvasData | null>(null);
   const [roundInfo, setRoundInfo] = useState<RoundInfo | null>(null);
-  const [playerStats, setPlayerStats] = useState<PlayerStatsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [cooldownEnd, setCooldownEnd] = useState(0);
   const [ephemeralFunded, setEphemeralFunded] = useState(false);
@@ -244,30 +238,6 @@ export function useGame() {
     [connection, wallet]
   );
 
-  // Fetch player stats (for the ephemeral keypair)
-  const fetchPlayerStats = useCallback(
-    async (round: number) => {
-      try {
-        const [statsPDA] = findPlayerStatsPDA(
-          round,
-          ephemeralKeypair.publicKey
-        );
-        const provider = new AnchorProvider(connection, wallet as never, {
-          commitment: "confirmed",
-        });
-        const program = getProgram(provider);
-        const s = await program.account.playerStats.fetch(statsPDA);
-        setPlayerStats({
-          pixelsPlaced: s.pixelsPlaced,
-          lastPlacementSlot: s.lastPlacementSlot.toNumber(),
-        });
-      } catch {
-        setPlayerStats(null);
-      }
-    },
-    [connection, wallet, ephemeralKeypair]
-  );
-
   // Poll all game state
   useEffect(() => {
     let cancelled = false;
@@ -279,7 +249,6 @@ export function useGame() {
         await Promise.all([
           fetchCanvas(config.currentRound),
           fetchRound(config.currentRound),
-          fetchPlayerStats(config.currentRound),
         ]);
       }
       setLoading(false);
@@ -291,7 +260,7 @@ export function useGame() {
       cancelled = true;
       clearInterval(interval);
     };
-  }, [fetchConfig, fetchCanvas, fetchRound, fetchPlayerStats]);
+  }, [fetchConfig, fetchCanvas, fetchRound]);
 
   // Build wallet provider for admin txs
   const getWalletProvider = useCallback(
@@ -317,10 +286,6 @@ export function useGame() {
 
       const round = gameConfig.currentRound;
       const [canvasPDA] = findCanvasPDA(round);
-      const [playerStatsPDA] = findPlayerStatsPDA(
-        round,
-        ephemeralKeypair.publicKey
-      );
 
       // Optimistic update
       localPixelsRef.current.set(`${x},${y}`, [r, g, b]);
@@ -350,8 +315,6 @@ export function useGame() {
           player: ephemeralKeypair.publicKey,
           gameConfig: configPDA,
           canvas: canvasPDA,
-          playerStats: playerStatsPDA,
-          systemProgram: SystemProgram.programId,
         })
         .instruction();
 
@@ -423,6 +386,40 @@ export function useGame() {
     await fetchConfig();
   }, [gameConfig, connection, wallet, configPDA, getWalletProvider, fetchConfig]);
 
+  // Admin: delegate canvas to ER (wallet signs)
+  const delegateCanvas = useCallback(async () => {
+    if (!gameConfig || !gameConfig.roundActive)
+      throw new Error("No active round");
+    const provider = getWalletProvider(connection);
+    if (!provider) throw new Error("Wallet not ready");
+    const program = getProgram(provider);
+    const round = gameConfig.currentRound;
+    const [canvasPDA] = findCanvasPDA(round);
+
+    // US devnet validator
+    const { PublicKey: PK } = await import("@solana/web3.js");
+    const VALIDATOR = new PK("MUS3hc9TCw4cGC12vHNoYcCGzJG1txjgQLZWVoeNHNd");
+
+    await program.methods
+      .delegateCanvas()
+      .accountsPartial({
+        payer: wallet.publicKey!,
+        gameConfig: configPDA,
+        pda: canvasPDA,
+        validator: VALIDATOR,
+        systemProgram: SystemProgram.programId,
+      })
+      .rpc({ skipPreflight: true });
+    await fetchConfig();
+  }, [
+    gameConfig,
+    connection,
+    wallet,
+    configPDA,
+    getWalletProvider,
+    fetchConfig,
+  ]);
+
   // Admin: end round (wallet signs, sent to ER)
   const endRound = useCallback(async () => {
     if (!gameConfig || !gameConfig.roundActive)
@@ -473,7 +470,6 @@ export function useGame() {
     gameConfig,
     canvasData,
     roundInfo,
-    playerStats,
     loading,
     cooldownEnd,
     isAdmin,
@@ -481,6 +477,7 @@ export function useGame() {
     placePixel,
     initialize,
     startRound,
+    delegateCanvas,
     endRound,
   };
 }
