@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="4" fill="#0a0a0a"/>
+  <!-- Grid of colored pixels representing a mini canvas -->
+  <rect x="4" y="4" width="6" height="6" fill="#ff3250" rx="1"/>
+  <rect x="11" y="4" width="6" height="6" fill="#00ff80" rx="1"/>
+  <rect x="18" y="4" width="6" height="6" fill="#0064ff" rx="1"/>
+  <rect x="4" y="11" width="6" height="6" fill="#ffd700" rx="1"/>
+  <rect x="11" y="11" width="6" height="6" fill="#ff00ff" rx="1"/>
+  <rect x="18" y="11" width="6" height="6" fill="#00ffff" rx="1"/>
+  <rect x="4" y="18" width="6" height="6" fill="#ff8000" rx="1"/>
+  <rect x="11" y="18" width="6" height="6" fill="#8000ff" rx="1"/>
+  <rect x="18" y="18" width="6" height="6" fill="#ff0080" rx="1"/>
+  <!-- Cursor/crosshair indicator -->
+  <rect x="25" y="25" width="5" height="5" fill="white" rx="1"/>
+  <rect x="26.5" y="26" width="2" height="3" fill="#0a0a0a"/>
+  <rect x="26" y="26.5" width="3" height="2" fill="#0a0a0a"/>
+</svg>

@@ -11,6 +11,7 @@ interface AdminPanelProps {
   isAdmin: boolean;
   onInitialize: () => Promise<void>;
   onStartRound: () => Promise<void>;
+  onDelegateCanvas: () => Promise<void>;
   onEndRound: () => Promise<void>;
 }
 
@@ -19,6 +20,7 @@ export function AdminPanel({
   isAdmin,
   onInitialize,
   onStartRound,
+  onDelegateCanvas,
   onEndRound,
 }: AdminPanelProps) {
   const [busy, setBusy] = useState<string | null>(null);
@@ -68,6 +70,18 @@ export function AdminPanel({
             onClick={() => exec("start", onStartRound)}
           >
             {busy === "start" ? "Starting..." : `Start Round ${gameConfig.currentRound + 1}`}
+          </Button>
+        )}
+
+        {gameConfig?.roundActive && (
+          <Button
+            size="sm"
+            variant="secondary"
+            className="w-full"
+            disabled={busy !== null}
+            onClick={() => exec("delegate", onDelegateCanvas)}
+          >
+            {busy === "delegate" ? "Delegating..." : "Delegate Canvas to ER"}
           </Button>
         )}
 
