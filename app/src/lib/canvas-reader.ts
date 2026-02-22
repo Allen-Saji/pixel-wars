@@ -10,7 +10,7 @@ export interface CanvasData {
   totalPlacements: number;
   round: number;
   bump: number;
-  /** Raw RGB pixel data, row-major. Length = 7500 (50*50*3). */
+  /** Raw RGB pixel data, row-major. Length = 30000 (100*100*3). */
   pixels: Uint8Array;
 }
 

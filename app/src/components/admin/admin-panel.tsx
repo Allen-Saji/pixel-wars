@@ -6,6 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { GameConfig } from "@/lib/use-game";
 
+const DURATION_OPTIONS = [
+  { label: "1 min", ms: 60_000 },
+  { label: "5 min", ms: 5 * 60_000 },
+  { label: "15 min", ms: 15 * 60_000 },
+  { label: "1 hour", ms: 60 * 60_000 },
+  { label: "6 hours", ms: 6 * 60 * 60_000 },
+  { label: "24 hours", ms: 24 * 60 * 60_000 },
+];
+
+const TIMER_KEY = "pixelwars_timer";
+
 interface AdminPanelProps {
   gameConfig: GameConfig | null;
   isAdmin: boolean;
@@ -25,6 +36,7 @@ export function AdminPanel({
 }: AdminPanelProps) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [durationMs, setDurationMs] = useState(DURATION_OPTIONS[2].ms); // default 15 min
 
   if (!isAdmin && gameConfig) return null;
 
@@ -63,14 +75,35 @@ export function AdminPanel({
         )}
 
         {gameConfig && !gameConfig.roundActive && (
-          <Button
-            size="sm"
-            className="w-full"
-            disabled={busy !== null}
-            onClick={() => exec("start", onStartRound)}
-          >
-            {busy === "start" ? "Starting..." : `Start Round ${gameConfig.currentRound + 1}`}
-          </Button>
+          <>
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-muted-foreground shrink-0">Duration</label>
+              <select
+                className="flex-1 rounded border border-border bg-background px-2 py-1 text-xs"
+                value={durationMs}
+                onChange={(e) => setDurationMs(Number(e.target.value))}
+              >
+                {DURATION_OPTIONS.map((opt) => (
+                  <option key={opt.ms} value={opt.ms}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+            <Button
+              size="sm"
+              className="w-full"
+              disabled={busy !== null}
+              onClick={() =>
+                exec("start", async () => {
+                  await onStartRound();
+                  const nextRound = (gameConfig.currentRound ?? 0) + 1;
+                  const endTime = Date.now() + durationMs;
+                  localStorage.setItem(TIMER_KEY, JSON.stringify({ round: nextRound, endTime }));
+                })
+              }
+            >
+              {busy === "start" ? "Starting..." : `Start Round ${gameConfig.currentRound + 1}`}
+            </Button>
+          </>
         )}
 
         {gameConfig?.roundActive && (

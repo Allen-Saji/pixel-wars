@@ -1,7 +1,6 @@
 "use client";
 
 import { GamePanel } from "@/components/game/game-panel";
-import { WalletButton } from "@/components/wallet/wallet-button";
 
 export default function Home() {
   return (
@@ -24,7 +23,7 @@ export default function Home() {
             devnet
           </span>
         </div>
-        <WalletButton />
+        <span className="text-xs text-muted-foreground">Spectator Mode</span>
       </header>
 
       {/* Main */}

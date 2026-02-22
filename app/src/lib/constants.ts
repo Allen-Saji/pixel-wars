@@ -8,8 +8,6 @@ export const CANVAS_WIDTH = 50;
 export const CANVAS_HEIGHT = 50;
 export const BYTES_PER_PIXEL = 3;
 export const CANVAS_DATA_SIZE = CANVAS_WIDTH * CANVAS_HEIGHT * BYTES_PER_PIXEL; // 7500
-export const PLACEMENT_COOLDOWN_SLOTS = 10; // ~4-5 seconds at 400ms/slot
-export const PLACEMENT_COOLDOWN_MS = PLACEMENT_COOLDOWN_SLOTS * 400;
 
 // Canvas zero_copy byte layout (after 8-byte discriminator)
 export const CANVAS_HEADER_SIZE = 8; // discriminator
@@ -23,9 +21,23 @@ export const SEED_CONFIG = "config";
 export const SEED_CANVAS = "canvas";
 export const SEED_PLAYER = "player";
 export const SEED_ROUND = "round";
+export const SEED_AGENT = "agent";
 
 // RPC endpoints
 export const L1_RPC_URL =
   process.env.NEXT_PUBLIC_RPC_URL || "https://api.devnet.solana.com";
 export const ER_RPC_URL =
-  process.env.NEXT_PUBLIC_ER_RPC_URL || "https://devnet.magicblock.app";
+  process.env.NEXT_PUBLIC_ER_RPC_URL || "https://devnet-us.magicblock.app";
+
+// Team definitions (must match agents/teams.ts)
+export interface TeamDef {
+  id: number;
+  name: string;
+  color: [number, number, number];
+}
+
+export const TEAMS: TeamDef[] = [
+  { id: 0, name: "MagicBlock", color: [255, 100, 50] },
+  { id: 1, name: "Arcium", color: [100, 50, 255] },
+  { id: 2, name: "Jito", color: [50, 220, 100] },
+];
