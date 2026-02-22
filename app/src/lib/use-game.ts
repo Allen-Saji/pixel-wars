@@ -327,24 +327,35 @@ export function useGame() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentRound]);
 
-  // Poll timer from API
+  // Derive round end time from on-chain start slot timestamp
+  // Default round duration (180s) — the orchestrator typically runs 30-180s rounds
+  const DEFAULT_ROUND_DURATION_MS = 180_000;
   useEffect(() => {
-    if (!gameConfig?.roundActive) { setRoundEndTime(null); return; }
-    const fetchTimer = async () => {
+    if (!gameConfig?.roundActive || !roundInfo?.startSlot) {
+      setRoundEndTime(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
       try {
-        const res = await fetch("/api/timer");
-        const data = await res.json();
-        if (data.round === gameConfig.currentRound && data.endTime) {
-          setRoundEndTime(data.endTime);
-        } else {
-          setRoundEndTime(null);
+        // First try the /api/timer endpoint (works when same serverless instance as orchestrator POST)
+        const timerRes = await fetch("/api/timer").then(r => r.json()).catch(() => null);
+        if (!cancelled && timerRes?.endTime && timerRes?.round === gameConfig.currentRound) {
+          setRoundEndTime(timerRes.endTime);
+          return;
         }
-      } catch { setRoundEndTime(null); }
-    };
-    fetchTimer();
-    const id = setInterval(fetchTimer, 5000);
-    return () => clearInterval(id);
-  }, [gameConfig]);
+        // Fallback: derive from on-chain slot timestamp
+        const blockTime = await l1Connection.getBlockTime(roundInfo.startSlot);
+        if (blockTime && !cancelled) {
+          setRoundEndTime(blockTime * 1000 + DEFAULT_ROUND_DURATION_MS);
+        }
+      } catch {
+        // Last resort: use current time + default duration (better than no timer)
+        if (!cancelled) setRoundEndTime(Date.now() + DEFAULT_ROUND_DURATION_MS);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [gameConfig?.roundActive, gameConfig?.currentRound, roundInfo?.startSlot]);
 
   // Periodically refresh agents (every 30s)
   useEffect(() => {
