@@ -150,7 +150,11 @@
 
 @keyframes scan-line {
   0% { transform: translateY(-100%); }
-  100% { transform: translateY(100%); }
+  100% { transform: translateY(300%); }
+}
+
+.animate-scan-line {
+  animation: scan-line 2s ease-in-out infinite;
 }
 
 @keyframes border-glow {
@@ -386,6 +390,46 @@
   height: 450px;
   background: radial-gradient(circle, rgba(50, 220, 100, 0.08) 0%, transparent 70%);
   animation: orb-drift-3 22s ease-in-out infinite;
+}
+
+/* ── Battle Timer ────────────────────────────────────────── */
+
+.battle-timer-normal {
+  background: rgba(50, 220, 100, 0.04);
+  border: 1px solid rgba(50, 220, 100, 0.12);
+}
+.dark .battle-timer-normal {
+  background: rgba(50, 220, 100, 0.06);
+  border: 1px solid rgba(50, 220, 100, 0.15);
+}
+
+.battle-timer-urgent {
+  background: rgba(255, 100, 50, 0.06);
+  border: 1px solid rgba(255, 100, 50, 0.2);
+  box-shadow: 0 0 20px rgba(255, 100, 50, 0.08);
+}
+.dark .battle-timer-urgent {
+  background: rgba(255, 100, 50, 0.08);
+  border: 1px solid rgba(255, 100, 50, 0.25);
+  box-shadow: 0 0 30px rgba(255, 100, 50, 0.1);
+}
+
+.battle-timer-critical {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  box-shadow: 0 0 30px rgba(239, 68, 68, 0.12);
+  animation: timer-shake 0.4s ease-in-out infinite;
+}
+.dark .battle-timer-critical {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  box-shadow: 0 0 40px rgba(239, 68, 68, 0.15);
+}
+
+@keyframes timer-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-1px); }
+  75% { transform: translateX(1px); }
 }
 
 /* ── Scrollbar styling ───────────────────────────────────── */

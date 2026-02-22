@@ -6,7 +6,8 @@ node_modules/
 test-ledger/
 archive/
 agents/keys/
+.next/
+.vercel/
+.timer.json
 
 .claude
-
-

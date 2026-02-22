@@ -80,23 +80,17 @@ export function GamePanel() {
 
   return (
     <div className="space-y-4">
-      {/* Winner / Status banner — full width */}
-      {hasWinner && <WinnerBanner winner={winner} round={gameConfig?.currentRound ?? 0} />}
-
-      {isActive && !hasWinner && (
-        <div className="flex items-center gap-3 px-1">
-          <span className="relative flex h-2.5 w-2.5 shrink-0">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#32dc64] opacity-75" />
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#32dc64]" />
-          </span>
-          <span className="text-sm font-semibold text-foreground">
-            Round {gameConfig?.currentRound} in progress
-          </span>
-          <span className="text-xs text-muted-foreground">
-            &mdash; {teamStats.reduce((s, t) => s + t.agents.length, 0)} agents competing
-          </span>
-        </div>
+      {/* Battle Timer — dramatic countdown at top */}
+      {isActive && (
+        <BattleTimer
+          roundEndTime={roundEndTime}
+          round={gameConfig?.currentRound ?? 0}
+          agentCount={teamStats.reduce((s, t) => s + t.agents.length, 0)}
+        />
       )}
+
+      {/* Winner banner */}
+      {hasWinner && <WinnerBanner winner={winner} round={gameConfig?.currentRound ?? 0} />}
 
       {/* 3-column layout: Left sidebar | Canvas | Right sidebar */}
       <div className="flex flex-col xl:flex-row gap-4 items-start">
@@ -107,7 +101,6 @@ export function GamePanel() {
             roundInfo={roundInfo}
             totalPlacements={canvasData?.totalPlacements}
             teamStats={teamStats}
-            roundEndTime={roundEndTime}
           />
           <AgentList teamStats={teamStats} isActive={isActive} />
         </div>
@@ -123,6 +116,168 @@ export function GamePanel() {
           <JoinCard />
         </div>
       </div>
+    </div>
+  );
+}
+
+function BattleTimer({ roundEndTime, round, agentCount }: { roundEndTime: number | null; round: number; agentCount: number }) {
+  const [remaining, setRemaining] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!roundEndTime) { setRemaining(null); return; }
+    const tick = () => setRemaining(Math.max(0, roundEndTime - Date.now()));
+    tick();
+    const id = setInterval(tick, 100);
+    return () => clearInterval(id);
+  }, [roundEndTime]);
+
+  const totalMs = remaining ?? 0;
+  const totalSec = Math.ceil(totalMs / 1000);
+  const mins = Math.floor(totalSec / 60);
+  const secs = totalSec % 60;
+  const isExpired = remaining !== null && remaining <= 0;
+  const isUrgent = remaining !== null && totalSec <= 15;
+  const isCritical = remaining !== null && totalSec <= 5;
+  const hasTimer = remaining !== null && roundEndTime !== null;
+
+  // Progress percentage (assume max 10 min rounds)
+  const pct = hasTimer && roundEndTime
+    ? Math.max(0, Math.min(100, (totalMs / (roundEndTime - (roundEndTime - 600000))) * 100))
+    : 100;
+
+  return (
+    <div
+      className={`relative rounded-xl overflow-hidden transition-all duration-500 ${
+        isCritical
+          ? "battle-timer-critical"
+          : isUrgent
+          ? "battle-timer-urgent"
+          : "battle-timer-normal"
+      }`}
+    >
+      {/* Animated background bar */}
+      {hasTimer && !isExpired && (
+        <div className="absolute inset-0 pointer-events-none">
+          <div
+            className="absolute left-0 top-0 h-full transition-all duration-1000 ease-linear opacity-10"
+            style={{
+              width: `${Math.min(100, (totalMs / ((roundEndTime ?? 0) - Date.now() + totalMs)) * 100)}%`,
+              background: isCritical
+                ? "linear-gradient(90deg, #ef4444, #ff6432)"
+                : isUrgent
+                ? "linear-gradient(90deg, #ff6432, #ff6432)"
+                : "linear-gradient(90deg, #6432ff, #32dc64)",
+            }}
+          />
+        </div>
+      )}
+
+      {/* Scan line when urgent */}
+      {isUrgent && !isExpired && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-red-500/40 to-transparent animate-scan-line" />
+        </div>
+      )}
+
+      <div className="relative z-10 flex items-center justify-between px-5 py-3">
+        {/* Left: round info + live dot */}
+        <div className="flex items-center gap-3">
+          <span className="relative flex h-2.5 w-2.5 shrink-0">
+            <span
+              className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+              style={{ backgroundColor: isCritical ? "#ef4444" : isUrgent ? "#ff6432" : "#32dc64" }}
+            />
+            <span
+              className="relative inline-flex rounded-full h-2.5 w-2.5"
+              style={{ backgroundColor: isCritical ? "#ef4444" : isUrgent ? "#ff6432" : "#32dc64" }}
+            />
+          </span>
+          <div>
+            <div className="text-sm font-bold tracking-tight">
+              Round {round}
+              <span className="ml-2 text-[10px] font-mono font-normal text-muted-foreground uppercase tracking-wider">
+                Live
+              </span>
+            </div>
+            <div className="text-[10px] text-muted-foreground">
+              {agentCount} agent{agentCount !== 1 ? "s" : ""} competing
+            </div>
+          </div>
+        </div>
+
+        {/* Center: countdown digits */}
+        {hasTimer ? (
+          <div className="flex items-center gap-1">
+            {isExpired ? (
+              <div className="flex items-center gap-2 animate-pulse">
+                <span className="text-xs font-mono font-bold text-red-400 uppercase tracking-wider">
+                  Ending round...
+                </span>
+              </div>
+            ) : (
+              <>
+                <TimerDigit value={String(mins).padStart(2, "0")} isCritical={isCritical} isUrgent={isUrgent} />
+                <span className={`text-xl font-mono font-bold mx-0.5 ${isCritical ? "text-red-400" : isUrgent ? "text-[#ff6432]" : "text-foreground/60"} ${!isExpired ? "animate-blink" : ""}`}>
+                  :
+                </span>
+                <TimerDigit value={String(secs).padStart(2, "0")} isCritical={isCritical} isUrgent={isUrgent} />
+              </>
+            )}
+          </div>
+        ) : (
+          <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider">
+            In progress
+          </div>
+        )}
+
+        {/* Right: urgency label */}
+        <div className="flex items-center gap-2">
+          {hasTimer && !isExpired && (
+            <span className={`text-[10px] font-mono uppercase tracking-wider px-2 py-1 rounded-md border transition-all duration-300 ${
+              isCritical
+                ? "text-red-400 border-red-500/30 bg-red-500/10 animate-pulse"
+                : isUrgent
+                ? "text-[#ff6432] border-[#ff6432]/30 bg-[#ff6432]/10"
+                : "text-[#32dc64] border-[#32dc64]/20 bg-[#32dc64]/10"
+            }`}>
+              {isCritical ? "Final seconds" : isUrgent ? "Hurry!" : "Active"}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Bottom progress bar */}
+      {hasTimer && !isExpired && (
+        <div className="h-[2px] bg-black/[0.06] dark:bg-white/[0.06]">
+          <div
+            className="h-full transition-all duration-1000 ease-linear"
+            style={{
+              width: `${Math.min(100, (totalMs / ((roundEndTime ?? 0) - Date.now() + totalMs)) * 100)}%`,
+              background: isCritical
+                ? "linear-gradient(90deg, #ef4444, #ff6432)"
+                : isUrgent
+                ? "linear-gradient(90deg, #ff6432, #ffa500)"
+                : "linear-gradient(90deg, #6432ff, #32dc64)",
+            }}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TimerDigit({ value, isCritical, isUrgent }: { value: string; isCritical: boolean; isUrgent: boolean }) {
+  return (
+    <div
+      className={`font-mono text-2xl font-black tabular-nums tracking-tight transition-colors duration-300 ${
+        isCritical
+          ? "text-red-400 animate-countdown-pulse"
+          : isUrgent
+          ? "text-[#ff6432]"
+          : "text-foreground"
+      }`}
+    >
+      {value}
     </div>
   );
 }

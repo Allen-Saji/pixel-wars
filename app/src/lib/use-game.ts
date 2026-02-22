@@ -127,8 +127,6 @@ function computeTeamStats(pixels: Uint8Array, agents: AgentInfo[]): TeamStats[] 
   });
 }
 
-const TIMER_KEY = "pixelwars_timer";
-
 // Module-level singletons
 const [configPDA] = findConfigPDA();
 const l1Connection = new Connection(L1_RPC_URL, "confirmed");
@@ -329,23 +327,23 @@ export function useGame() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentRound]);
 
-  // Read competition timer from localStorage
+  // Poll timer from API
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(TIMER_KEY);
-      if (raw) {
-        const { round, endTime } = JSON.parse(raw);
-        if (gameConfig && round === gameConfig.currentRound && gameConfig.roundActive) {
-          setRoundEndTime(endTime);
+    if (!gameConfig?.roundActive) { setRoundEndTime(null); return; }
+    const fetchTimer = async () => {
+      try {
+        const res = await fetch("/api/timer");
+        const data = await res.json();
+        if (data.round === gameConfig.currentRound && data.endTime) {
+          setRoundEndTime(data.endTime);
         } else {
           setRoundEndTime(null);
         }
-      } else {
-        setRoundEndTime(null);
-      }
-    } catch {
-      setRoundEndTime(null);
-    }
+      } catch { setRoundEndTime(null); }
+    };
+    fetchTimer();
+    const id = setInterval(fetchTimer, 5000);
+    return () => clearInterval(id);
   }, [gameConfig]);
 
   // Periodically refresh agents (every 30s)
