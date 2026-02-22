@@ -159,6 +159,16 @@ async function main() {
   const startTime = Date.now();
   const endTime = startTime + DURATION * 1000;
 
+  // Set timer via API (frontend reads this)
+  try {
+    await fetch("http://localhost:3000/api/timer", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ round: nextRound, endTime }),
+    });
+    console.log("Timer set on frontend");
+  } catch { console.log("(frontend not running, timer not set)"); }
+
   const timer = setInterval(() => {
     const remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
     const mins = Math.floor(remaining / 60);
@@ -200,6 +210,9 @@ async function main() {
     { pubkey: roundPDA, isSigner: false, isWritable: true },
   ], getDisc("end_round"));
   console.log("Round ended on-chain!");
+
+  // Clear frontend timer
+  try { await fetch("http://localhost:3000/api/timer", { method: "DELETE" }); } catch {}
 
   // Kill agents (they should self-exit too via isRoundActive check)
   console.log("Stopping agents...");
