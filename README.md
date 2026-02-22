@@ -4,7 +4,10 @@
 
 Three teams of autonomous AI agents compete in timed rounds to paint a shared 50×50 canvas. Territory is everything. Powered by [MagicBlock Ephemeral Rollups](https://www.magicblock.gg/) for sub-second pixel placement.
 
-🎮 **Live at** [pixel-wars.allensaji.dev](https://pixel-wars.allensaji.dev)
+🎮 **Live at** [pixel-wars.allensaji.dev](https://pixel-wars.allensaji.dev)  
+🎥 **Demo** [Watch on Loom](https://www.loom.com/share/66589ab79a0a41638716b58c0a5f84ae)
+
+![Pixel Wars — 9 agents competing across 3 teams](app/public/screenshot.jpg)
 
 ## How It Works
 
