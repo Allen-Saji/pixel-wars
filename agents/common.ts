@@ -24,11 +24,11 @@ const CANVAS_PIXELS_OFFSET = 24;
 const SEED_CONFIG = Buffer.from("config");
 const SEED_CANVAS = Buffer.from("canvas");
 const SEED_ROUND = Buffer.from("round");
-const SEED_PLAYER = Buffer.from("player");
+const SEED_AGENT = Buffer.from("agent");
 
 // ─── RPC Endpoints ──────────────────────────────────────────────────────────
 const L1_RPC = process.env.L1_RPC_URL || "https://api.devnet.solana.com";
-const ER_RPC = process.env.ER_RPC_URL || "https://devnet.magicblock.app";
+const ER_RPC = process.env.ER_RPC_URL || "https://devnet-us.magicblock.app";
 
 // ─── PDA Helpers ────────────────────────────────────────────────────────────
 function toLeU32(n: number): Buffer {
@@ -55,12 +55,12 @@ export function findRoundPDA(round: number): [PublicKey, number] {
   );
 }
 
-export function findPlayerStatsPDA(
+export function findAgentRegistrationPDA(
   round: number,
-  player: PublicKey
+  agent: PublicKey
 ): [PublicKey, number] {
   return PublicKey.findProgramAddressSync(
-    [SEED_PLAYER, toLeU32(round), player.toBuffer()],
+    [SEED_AGENT, agent.toBuffer(), toLeU32(round)],
     PROGRAM_ID
   );
 }
@@ -73,7 +73,10 @@ export type Grid = RGB[][];
 export interface AgentContext {
   name: string;
   keypair: Keypair;
+  teamId: number;
   program: anchor.Program;
+  /** L1 provider (for registration) */
+  l1Program: anchor.Program;
   l1Connection: Connection;
   erConnection: Connection;
   currentRound: number;
@@ -81,7 +84,7 @@ export interface AgentContext {
 }
 
 // ─── Setup ──────────────────────────────────────────────────────────────────
-export async function setupAgent(name: string): Promise<AgentContext> {
+export async function setupAgent(name: string, teamId: number): Promise<AgentContext> {
   // Load or generate agent keypair
   const keyPath = path.join(__dirname, `keys/${name}.json`);
   let keypair: Keypair;
@@ -108,16 +111,24 @@ export async function setupAgent(name: string): Promise<AgentContext> {
   );
 
   const wallet = new anchor.Wallet(keypair);
-  const provider = new anchor.AnchorProvider(erConnection, wallet, {
+
+  // ER provider (for pixel placement)
+  const erProvider = new anchor.AnchorProvider(erConnection, wallet, {
     commitment: "confirmed",
     skipPreflight: true,
   });
-  const program = new anchor.Program(idl, provider);
+  const program = new anchor.Program(idl, erProvider);
+
+  // L1 provider (for registration)
+  const l1Provider = new anchor.AnchorProvider(l1Connection, wallet, {
+    commitment: "confirmed",
+  });
+  const l1Program = new anchor.Program(idl, l1Provider);
 
   const [configPDA] = findConfigPDA();
 
-  // Fetch current round
-  const config = await program.account.gameConfig.fetch(configPDA);
+  // Fetch current round from L1
+  const config = await l1Program.account.gameConfig.fetch(configPDA);
   const currentRound = config.currentRound as number;
 
   console.log(`[${name}] Agent: ${keypair.publicKey.toBase58()}`);
@@ -127,15 +138,51 @@ export async function setupAgent(name: string): Promise<AgentContext> {
     throw new Error(`No active round. Current round: ${currentRound}`);
   }
 
-  return {
+  const ctx: AgentContext = {
     name,
     keypair,
+    teamId,
     program,
+    l1Program,
     l1Connection,
     erConnection,
     currentRound,
     configPDA,
   };
+
+  // Auto-register if not already registered
+  await registerAgentIfNeeded(ctx);
+
+  return ctx;
+}
+
+// ─── Registration ───────────────────────────────────────────────────────────
+async function registerAgentIfNeeded(ctx: AgentContext): Promise<void> {
+  const [regPDA] = findAgentRegistrationPDA(ctx.currentRound, ctx.keypair.publicKey);
+
+  // Check if already registered
+  const info = await ctx.l1Connection.getAccountInfo(regPDA).catch(() => null);
+  if (info) {
+    console.log(`[${ctx.name}] Already registered for round ${ctx.currentRound}`);
+    return;
+  }
+
+  console.log(`[${ctx.name}] Registering for round ${ctx.currentRound}, team ${ctx.teamId}...`);
+  try {
+    await ctx.l1Program.methods
+      .registerAgent(ctx.teamId)
+      .accountsPartial({
+        agent: ctx.keypair.publicKey,
+        gameConfig: ctx.configPDA,
+        registration: regPDA,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .rpc();
+    console.log(`[${ctx.name}] Registered successfully!`);
+  } catch (e: any) {
+    console.error(`[${ctx.name}] Registration failed:`, e.message?.slice(0, 200));
+    // Don't throw — agent can still place pixels on ER without L1 registration
+  }
 }
 
 // ─── Canvas Read ────────────────────────────────────────────────────────────
@@ -176,9 +223,9 @@ export async function placePixel(
 
   try {
     const ix = await ctx.program.methods
-      .placePixel(x, y, r, g, b)
+      .placePixel(x, y, r, g, b, ctx.teamId)
       .accountsPartial({
-        player: ctx.keypair.publicKey,
+        agent: ctx.keypair.publicKey,
         gameConfig: ctx.configPDA,
         canvas: canvasPDA,
       })
@@ -198,9 +245,6 @@ export async function placePixel(
     return sig;
   } catch (e: any) {
     const msg = e.message || String(e);
-    if (msg.includes("Cooldown") || msg.includes("cooldown")) {
-      return null; // Expected, silently retry later
-    }
     console.error(`[${ctx.name}] placePixel error:`, msg.slice(0, 200));
     return null;
   }
@@ -236,6 +280,16 @@ export async function ensureFunded(ctx: AgentContext): Promise<void> {
   } catch (e: any) {
     console.error(`[${ctx.name}] Airdrop failed:`, e.message?.slice(0, 100));
     console.log(`[${ctx.name}] Fund manually: ${ctx.keypair.publicKey.toBase58()}`);
+  }
+}
+
+// ─── Round Check ───────────────────────────────────────────────────────────
+export async function isRoundActive(ctx: AgentContext): Promise<boolean> {
+  try {
+    const config = await ctx.l1Program.account.gameConfig.fetch(ctx.configPDA);
+    return config.roundActive as boolean;
+  } catch {
+    return false;
   }
 }
 

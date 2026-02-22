@@ -1,36 +1,39 @@
 module.exports = {
   apps: [
     {
-      name: "picasso",
-      script: "picasso.ts",
+      name: "magicblock-agent",
+      script: "magicblock-agent.ts",
       cwd: __dirname,
       interpreter: "npx",
       interpreter_args: "tsx",
       env: {
         L1_RPC_URL: "https://api.devnet.solana.com",
-        ER_RPC_URL: "https://devnet-rpc.magicblock.app",
+        ER_RPC_URL: "https://devnet-us.magicblock.app",
+        NODE_OPTIONS: "--dns-result-order=ipv4first",
       },
     },
     {
-      name: "defender",
-      script: "defender.ts",
+      name: "arcium-agent",
+      script: "arcium-agent.ts",
       cwd: __dirname,
       interpreter: "npx",
       interpreter_args: "tsx",
       env: {
         L1_RPC_URL: "https://api.devnet.solana.com",
-        ER_RPC_URL: "https://devnet-rpc.magicblock.app",
+        ER_RPC_URL: "https://devnet-us.magicblock.app",
+        NODE_OPTIONS: "--dns-result-order=ipv4first",
       },
     },
     {
-      name: "chaos",
-      script: "chaos.ts",
+      name: "jito-agent",
+      script: "jito-agent.ts",
       cwd: __dirname,
       interpreter: "npx",
       interpreter_args: "tsx",
       env: {
         L1_RPC_URL: "https://api.devnet.solana.com",
-        ER_RPC_URL: "https://devnet-rpc.magicblock.app",
+        ER_RPC_URL: "https://devnet-us.magicblock.app",
+        NODE_OPTIONS: "--dns-result-order=ipv4first",
       },
     },
   ],
