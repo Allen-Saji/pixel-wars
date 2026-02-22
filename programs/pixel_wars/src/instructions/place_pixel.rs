@@ -4,7 +4,7 @@ use crate::errors::PixelError;
 
 #[derive(Accounts)]
 pub struct PlacePixel<'info> {
-    pub player: Signer<'info>,
+    pub agent: Signer<'info>,
 
     #[account(
         seeds = [SEED_CONFIG],
@@ -23,7 +23,7 @@ pub struct PlacePixel<'info> {
     pub canvas: AccountLoader<'info, Canvas>,
 }
 
-pub fn handler(ctx: Context<PlacePixel>, x: u16, y: u16, r: u8, g: u8, b: u8) -> Result<()> {
+pub fn handler(ctx: Context<PlacePixel>, x: u16, y: u16, r: u8, g: u8, b: u8, team_id: u8) -> Result<()> {
     require!(x < CANVAS_WIDTH && y < CANVAS_HEIGHT, PixelError::OutOfBounds);
 
     let mut canvas = ctx.accounts.canvas.load_mut()?;
@@ -37,9 +37,10 @@ pub fn handler(ctx: Context<PlacePixel>, x: u16, y: u16, r: u8, g: u8, b: u8) ->
         .ok_or(PixelError::ArithmeticOverflow)?;
 
     msg!(
-        "pixel({},{}) = #{:02x}{:02x}{:02x} by {}",
+        "pixel({},{}) = #{:02x}{:02x}{:02x} by {} team={}",
         x, y, r, g, b,
-        ctx.accounts.player.key(),
+        ctx.accounts.agent.key(),
+        team_id,
     );
 
     Ok(())

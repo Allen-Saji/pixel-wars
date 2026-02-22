@@ -341,7 +341,7 @@ export type PixelWars = {
       ],
       "accounts": [
         {
-          "name": "player",
+          "name": "agent",
           "signer": true
         },
         {
@@ -411,6 +411,10 @@ export type PixelWars = {
         {
           "name": "b",
           "type": "u8"
+        },
+        {
+          "name": "teamId",
+          "type": "u8"
         }
       ]
     },
@@ -448,6 +452,81 @@ export type PixelWars = {
           "type": {
             "vec": "bytes"
           }
+        }
+      ]
+    },
+    {
+      "name": "registerAgent",
+      "discriminator": [
+        135,
+        157,
+        66,
+        195,
+        2,
+        113,
+        175,
+        30
+      ],
+      "accounts": [
+        {
+          "name": "agent",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "gameConfig",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "registration",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "agent"
+              },
+              {
+                "kind": "account",
+                "path": "game_config.current_round",
+                "account": "gameConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "teamId",
+          "type": "u8"
         }
       ]
     },
@@ -508,6 +587,19 @@ export type PixelWars = {
     }
   ],
   "accounts": [
+    {
+      "name": "agentRegistration",
+      "discriminator": [
+        130,
+        53,
+        100,
+        103,
+        121,
+        77,
+        148,
+        19
+      ]
+    },
     {
       "name": "canvas",
       "discriminator": [
@@ -583,9 +675,65 @@ export type PixelWars = {
       "code": 12006,
       "name": "arithmeticOverflow",
       "msg": "Arithmetic overflow"
+    },
+    {
+      "code": 12007,
+      "name": "invalidTeamId",
+      "msg": "Invalid team ID"
+    },
+    {
+      "code": 12008,
+      "name": "agentAlreadyRegistered",
+      "msg": "Agent already registered for this round"
     }
   ],
   "types": [
+    {
+      "name": "agentRegistration",
+      "docs": [
+        "Agent registration for a round (PDA: [\"agent\", agent_pubkey, round_le_bytes])"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "agent",
+            "docs": [
+              "Agent wallet pubkey"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "round",
+            "docs": [
+              "Round registered for"
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "teamId",
+            "docs": [
+              "Team ID (0-indexed)"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "registeredAt",
+            "docs": [
+              "Registration timestamp"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump seed"
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
     {
       "name": "canvas",
       "docs": [
@@ -640,7 +788,7 @@ export type PixelWars = {
             "type": {
               "array": [
                 "u8",
-                7500
+                30000
               ]
             }
           }

@@ -1,22 +1,23 @@
 use anchor_lang::prelude::*;
 
-/// Canvas dimensions (50x50 for MVP; scale to 100x100 post-hackathon)
+/// Canvas dimensions
 pub const CANVAS_WIDTH: u16 = 50;
 pub const CANVAS_HEIGHT: u16 = 50;
 /// 3 bytes per pixel (RGB)
 pub const BYTES_PER_PIXEL: usize = 3;
-/// Total pixel data size
+/// Total pixel data size: 100*100*3 = 30,000
 pub const CANVAS_DATA_SIZE: usize =
     (CANVAS_WIDTH as usize) * (CANVAS_HEIGHT as usize) * BYTES_PER_PIXEL;
 
-/// Rate limit: minimum slots between placements per player
-pub const PLACEMENT_COOLDOWN_SLOTS: u64 = 10; // ~4-5 seconds at 400ms/slot
+/// Max number of teams
+pub const MAX_TEAMS: u8 = 10;
 
 /// PDA seeds
 pub const SEED_CONFIG: &[u8] = b"config";
 pub const SEED_CANVAS: &[u8] = b"canvas";
 pub const SEED_PLAYER: &[u8] = b"player";
 pub const SEED_ROUND: &[u8] = b"round";
+pub const SEED_AGENT: &[u8] = b"agent";
 
 /// Game configuration (singleton)
 #[account]
@@ -90,4 +91,23 @@ pub struct Round {
 
 impl Round {
     pub const LEN: usize = 8 + 4 + 8 + 8 + 8 + 1 + 1;
+}
+
+/// Agent registration for a round (PDA: ["agent", agent_pubkey, round_le_bytes])
+#[account]
+pub struct AgentRegistration {
+    /// Agent wallet pubkey
+    pub agent: Pubkey,
+    /// Round registered for
+    pub round: u32,
+    /// Team ID (0-indexed)
+    pub team_id: u8,
+    /// Registration timestamp
+    pub registered_at: i64,
+    /// Bump seed
+    pub bump: u8,
+}
+
+impl AgentRegistration {
+    pub const LEN: usize = 8 + 32 + 4 + 1 + 8 + 1;
 }

@@ -22,4 +22,10 @@ pub enum PixelError {
 
     #[msg("Arithmetic overflow")]
     ArithmeticOverflow,
+
+    #[msg("Invalid team ID")]
+    InvalidTeamId,
+
+    #[msg("Agent already registered for this round")]
+    AgentAlreadyRegistered,
 }

@@ -3,8 +3,6 @@ use crate::state::*;
 use crate::errors::PixelError;
 
 /// Canvas account size: 8 (discriminator) + struct size with repr(C) alignment
-/// Layout: round(u32,4) + pad(4) + total_placements(u64,8) + bump(u8,1) + _padding(3) + pixels(7500)
-/// = 8 + 4 + 4 + 8 + 1 + 3 + 7500 = 7528
 pub const CANVAS_ACCOUNT_SIZE: usize = 8 + std::mem::size_of::<Canvas>();
 
 #[derive(Accounts)]
@@ -58,7 +56,6 @@ pub fn handler(ctx: Context<StartRound>) -> Result<()> {
         canvas.round = new_round_num;
         canvas.total_placements = 0;
         canvas.bump = ctx.bumps.canvas;
-        // pixels array is zero-initialized (black canvas)
     }
 
     let round = &mut ctx.accounts.round;

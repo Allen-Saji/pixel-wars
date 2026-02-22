@@ -8,6 +8,38 @@
   },
   "instructions": [
     {
+      "name": "commit_canvas",
+      "discriminator": [
+        63,
+        251,
+        214,
+        200,
+        93,
+        130,
+        56,
+        66
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "canvas",
+          "writable": true
+        },
+        {
+          "name": "magic_context",
+          "writable": true
+        },
+        {
+          "name": "magic_program"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "delegate_canvas",
       "discriminator": [
         202,
@@ -237,8 +269,7 @@
           }
         },
         {
-          "name": "canvas",
-          "writable": true
+          "name": "canvas"
         },
         {
           "name": "round",
@@ -262,17 +293,6 @@
               }
             ]
           }
-        },
-        {
-          "name": "magic_context",
-          "writable": true
-        },
-        {
-          "name": "magic_program"
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
         }
       ],
       "args": []
@@ -335,7 +355,7 @@
       ],
       "accounts": [
         {
-          "name": "player",
+          "name": "agent",
           "signer": true
         },
         {
@@ -405,6 +425,10 @@
         {
           "name": "b",
           "type": "u8"
+        },
+        {
+          "name": "team_id",
+          "type": "u8"
         }
       ]
     },
@@ -444,6 +468,148 @@
           }
         }
       ]
+    },
+    {
+      "name": "register_agent",
+      "discriminator": [
+        135,
+        157,
+        66,
+        195,
+        2,
+        113,
+        175,
+        30
+      ],
+      "accounts": [
+        {
+          "name": "agent",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "game_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "registration",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "agent"
+              },
+              {
+                "kind": "account",
+                "path": "game_config.current_round",
+                "account": "GameConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "team_id",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "resize_canvas",
+      "discriminator": [
+        198,
+        30,
+        214,
+        230,
+        229,
+        40,
+        76,
+        106
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "game_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "canvas",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  97,
+                  110,
+                  118,
+                  97,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "game_config.current_round",
+                "account": "GameConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
     },
     {
       "name": "start_round",
@@ -502,6 +668,19 @@
     }
   ],
   "accounts": [
+    {
+      "name": "AgentRegistration",
+      "discriminator": [
+        130,
+        53,
+        100,
+        103,
+        121,
+        77,
+        148,
+        19
+      ]
+    },
     {
       "name": "Canvas",
       "discriminator": [
@@ -577,9 +756,65 @@
       "code": 12006,
       "name": "ArithmeticOverflow",
       "msg": "Arithmetic overflow"
+    },
+    {
+      "code": 12007,
+      "name": "InvalidTeamId",
+      "msg": "Invalid team ID"
+    },
+    {
+      "code": 12008,
+      "name": "AgentAlreadyRegistered",
+      "msg": "Agent already registered for this round"
     }
   ],
   "types": [
+    {
+      "name": "AgentRegistration",
+      "docs": [
+        "Agent registration for a round (PDA: [\"agent\", agent_pubkey, round_le_bytes])"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "agent",
+            "docs": [
+              "Agent wallet pubkey"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "round",
+            "docs": [
+              "Round registered for"
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "team_id",
+            "docs": [
+              "Team ID (0-indexed)"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "registered_at",
+            "docs": [
+              "Registration timestamp"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump seed"
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
     {
       "name": "Canvas",
       "docs": [
