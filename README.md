@@ -1,6 +1,6 @@
 # Pixel Wars
 
-A multiplayer pixel art game on Solana where humans and AI agents compete in real-time to paint a shared 50x50 canvas — powered by [MagicBlock Ephemeral Rollups](https://www.magicblock.gg/) for gasless, sub-second execution.
+An AI-only pixel art battle on Solana — three teams of autonomous agents compete in timed rounds to paint a shared 50x50 canvas, powered by [MagicBlock Ephemeral Rollups](https://www.magicblock.gg/) for sub-second execution.
 
 ## Architecture
 
@@ -8,55 +8,67 @@ A multiplayer pixel art game on Solana where humans and AI agents compete in rea
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  CLIENTS                                                    │
-│  ┌──────────────┐   ┌─────────┐ ┌──────────┐ ┌───────┐     │
-│  │ Human Players│   │ Picasso │ │ Defender  │ │ Chaos │     │
-│  └──────┬───────┘   └────┬────┘ └─────┬────┘ └───┬───┘     │
-├─────────┼────────────────┼────────────┼──────────┼──────────┤
-│  APPLICATION             │            │          │          │
-│  ┌──────┴───────┐   ┌────┴────────────┴──────────┴───┐      │
-│  │   Next.js    │   │        Agent Runtime           │      │
-│  │  Frontend    │   │       Node.js + pm2            │      │
-│  └──────┬───────┘   └──────────────┬─────────────────┘      │
-├─────────┼──────────────────────────┼────────────────────────┤
-│  EXECUTION                         │                        │
-│  ┌─────────────────────────────────┴──────────────────┐     │
-│  │      MagicBlock Ephemeral Rollups                  │     │
-│  │      Gasless place_pixel Execution                 │     │
-│  └───────────┬──────────────────────┬─────────────────┘     │
-│          delegate                commit                     │
-├──────────────┼──────────────────────┼───────────────────────┤
-│  SETTLEMENT  ↓                      ↑                       │
-│  ┌──────────────────────────────────────────────────┐       │
-│  │              Solana L1 Blockchain                │       │
-│  ├──────────┬───────────┬─────────────┬─────────────┤       │
-│  │GameConfig│  Canvas   │ PlayerStats │    Round     │       │
-│  │          │ 50x50 RGB │             │             │       │
-│  └──────────┴───────────┴─────────────┴─────────────┘       │
+│  SPECTATORS                                                  │
+│  ┌──────────────┐                                            │
+│  │   Next.js    │  Spectator-only frontend                   │
+│  │   Frontend   │  Live canvas, team leaderboard, tx feed    │
+│  └──────┬───────┘                                            │
+├─────────┼────────────────────────────────────────────────────┤
+│  AGENTS │                                                    │
+│  ┌──────┴────────────────────────────────────────────┐       │
+│  │  MagicBlock Agent │ Arcium Agent │ Jito Agent     │       │
+│  │   Team 0 (orange) │ Team 1 (purple)│ Team 2 (green)│      │
+│  └──────────────────────────┬────────────────────────┘       │
+│                             │ place_pixel (ER)               │
+├─────────────────────────────┼────────────────────────────────┤
+│  EXECUTION                  ↓                                │
+│  ┌───────────────────────────────────────────────────┐       │
+│  │       MagicBlock Ephemeral Rollups (US)           │       │
+│  │       Sub-second place_pixel execution            │       │
+│  └───────────┬──────────────────────┬────────────────┘       │
+│          delegate                commit                      │
+├──────────────┼──────────────────────┼────────────────────────┤
+│  SETTLEMENT  ↓                      ↑                        │
+│  ┌───────────────────────────────────────────────────┐       │
+│  │              Solana L1 (Devnet)                   │       │
+│  ├──────────┬───────────┬──────────────┬─────────────┤       │
+│  │GameConfig│  Canvas   │AgentRegistr. │    Round    │       │
+│  │          │ 50x50 RGB │  per team    │             │       │
+│  └──────────┴───────────┴──────────────┴─────────────┘       │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ### How It Works
 
-1. **Admin** initializes the game and starts a round (creates Canvas + Round accounts)
-2. **Canvas is delegated** to a MagicBlock ER validator for gasless execution
-3. **Players and AI agents** send `place_pixel` transactions to the ER — zero gas fees, sub-second confirmations
-4. Each pixel placement writes RGB data directly to the on-chain Canvas account (rate-limited: 1 pixel per ~4 seconds per player)
-5. **Admin ends the round** — the Canvas is committed back to Solana L1 as a permanent snapshot
+1. **Game orchestrator** ends any previous round and starts a new one (creates Canvas + Round accounts)
+2. **Canvas is delegated** to the MagicBlock ER US validator for fast execution
+3. **AI agents register** for a team, then paint their team logo on the canvas via `place_pixel` on ER
+4. Agents continuously scan the canvas and repair damaged pixels from competing teams
+5. **Timer expires** — canvas is committed back to Solana L1, round ends, agents auto-shutdown
+6. **Frontend** displays the final canvas with winner banner, team leaderboard, and stats
+
+## Teams
+
+| Team | Color | Agent |
+|------|-------|-------|
+| MagicBlock | ![#ff6432](https://via.placeholder.com/12/ff6432/ff6432.png) Orange-red `[255,100,50]` | Paints MagicBlock logo |
+| Arcium | ![#6432ff](https://via.placeholder.com/12/6432ff/6432ff.png) Purple `[100,50,255]` | Paints Arcium logo |
+| Jito | ![#32dc64](https://via.placeholder.com/12/32dc64/32dc64.png) Green `[50,220,100]` | Paints Jito logo |
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
-| Smart Contract | Anchor 0.32.1, Solana BPF |
-| Gasless Execution | MagicBlock Ephemeral Rollups SDK 0.8.5 |
-| Frontend | Next.js, Solana Wallet Adapter |
-| AI Agents | Node.js, pm2 |
-| Canvas | 50x50 pixels, RGB (7,500 bytes on-chain) |
+| Smart Contract | Anchor, Solana BPF |
+| Fast Execution | MagicBlock Ephemeral Rollups (`#[delegate]` macro) |
+| Frontend | Next.js 16, Sonner (toast notifications) |
+| AI Agents | Node.js + TypeScript |
+| Game Orchestrator | `scripts/run-game.ts` (timer, auto-start/end) |
+| Canvas | 50x50 pixels, RGB (7,500 bytes on-chain, zero-copy) |
 
 ## Smart Contract
 
-**Program ID:** `DTixMqrK6NTWSjVVCeLWojjiHjffRLcVFCdk5LorvR8K`
+**Program ID:** `5XGbapaUWi6ViSxcCY3Ud7J7RbNdB4UNYtSr761jxWH2`
 
 ### Instructions
 
@@ -65,68 +77,111 @@ A multiplayer pixel art game on Solana where humans and AI agents compete in rea
 | `initialize` | Create GameConfig singleton | Any signer (becomes authority) |
 | `start_round` | Create Canvas + Round accounts | Authority only |
 | `delegate_canvas` | Delegate Canvas to ER validator | Authority only |
-| `place_pixel` | Write a pixel (x, y, r, g, b) | Any signer (runs in ER) |
-| `end_round` | Commit Canvas back to L1, finalize round | Authority only (runs in ER) |
+| `register_agent` | Register an agent for a team in the current round | Any signer (L1) |
+| `place_pixel` | Write a pixel (x, y, r, g, b, team_id) | Registered agents only (ER) |
+| `commit_canvas` | Undelegate canvas from ER back to L1 | Authority only (ER) |
+| `end_round` | Finalize round on L1 | Authority only |
 
 ### On-Chain Accounts (PDAs)
 
-| Account | Seeds | Size | Purpose |
-|---------|-------|------|---------|
-| `GameConfig` | `["config"]` | ~46 B | Global state, authority, round counter |
-| `Canvas` | `["canvas", round]` | ~7.5 KB | 50x50 RGB pixel data (zero-copy) |
-| `PlayerStats` | `["player", round, pubkey]` | ~57 B | Per-player placement count + cooldown |
-| `Round` | `["round", round]` | ~38 B | Round metadata, start/end slots |
+| Account | Seeds | Purpose |
+|---------|-------|---------|
+| `GameConfig` | `["config"]` | Global state, authority, round counter |
+| `Canvas` | `["canvas", round_le]` | 50x50 RGB pixel data (zero-copy, delegated to ER) |
+| `Round` | `["round", round_le]` | Round metadata, start/end slots, total placements |
+| `AgentRegistration` | `["agent", pubkey, round_le]` | Per-agent team assignment for a round |
 
-### Rate Limiting
+## Frontend
 
-- **Cooldown:** 10 slots (~4-5 seconds at 400ms/slot)
-- **Bounds check:** x < 50, y < 50
-- **Pixel format:** RGB, 3 bytes per pixel, row-major layout
+Spectator-only Next.js app — no wallet connection needed.
 
-## AI Agents
+- **Live canvas** — subscribes to ER websocket for real-time pixel updates
+- **Team leaderboard** — pixel counts + progress bars per team
+- **Agent list** — registered agents grouped by team
+- **TX feed** — sonner toast notifications for pixel placements
+- **Winner banner** — displayed when round ends
+- **API endpoint** — `GET /api/game` returns game state for agent discovery
 
-Three autonomous agents compete alongside human players:
+## Running a Game
 
-| Agent | Strategy | Behavior |
-|-------|----------|----------|
-| **Picasso** | Template artist | Draws pixel art patterns (hearts, logos, spirals) |
-| **Defender** | Territory guard | Claims a quadrant, overwrites enemy pixels |
-| **Chaos** | Randomizer | Random position, random color — creates visual noise |
+```bash
+# Run a 30-second game (ends previous round, starts new, spawns agents, auto-ends)
+NODE_OPTIONS="--dns-result-order=ipv4first" npx tsx scripts/run-game.ts 30
 
-All agents run gaslessly on the ER — zero cost, managed via pm2.
+# Run a 3-minute game (default: 180s)
+NODE_OPTIONS="--dns-result-order=ipv4first" npx tsx scripts/run-game.ts
+```
+
+The orchestrator handles the full lifecycle:
+1. Ends any active round (commit canvas from ER → end round on L1)
+2. Starts a new round + delegates canvas to ER
+3. Spawns all 3 team agents
+4. Runs countdown timer
+5. When time's up: commits canvas, ends round, kills agents
 
 ## Development
 
 ### Prerequisites
 
 - Rust + Solana CLI
-- Anchor CLI 0.32.1
+- Anchor CLI
 - Node.js 18+
 
-### Build & Test
+### Build & Run
 
 ```bash
 # Build the program
 anchor build
 
-# Run tests (12/12 passing)
-anchor test
+# Start the frontend
+cd app && npm run dev
+
+# Run a test game
+NODE_OPTIONS="--dns-result-order=ipv4first" npx tsx scripts/run-game.ts 30
 ```
 
 ### Project Structure
 
 ```
 programs/pixel_wars/src/
-├── lib.rs              # Program entry point
-├── state.rs            # Account structs + constants
-├── errors.rs           # Custom error types
+├── lib.rs                    # Program entry point
+├── state.rs                  # Account structs + constants
+├── errors.rs                 # Custom error types
 └── instructions/
-    ├── initialize.rs    # Setup GameConfig
-    ├── start_round.rs   # Create Canvas + Round
-    ├── delegate_canvas.rs # Delegate to ER
-    ├── place_pixel.rs   # Core gameplay
-    └── end_round.rs     # Commit + finalize
+    ├── initialize.rs         # Setup GameConfig
+    ├── start_round.rs        # Create Canvas + Round
+    ├── delegate_canvas.rs    # Delegate to ER
+    ├── register_agent.rs     # Agent team registration
+    ├── place_pixel.rs        # Core gameplay (team-enforced)
+    ├── commit_canvas.rs      # Undelegate from ER
+    └── end_round.rs          # Finalize round
+
+agents/
+├── teams.ts                  # Team definitions + logo bitmaps
+├── common.ts                 # Shared agent setup, register, place pixel
+├── magicblock-agent.ts       # Team 0 agent
+├── arcium-agent.ts           # Team 1 agent
+└── jito-agent.ts             # Team 2 agent
+
+scripts/
+├── run-game.ts               # Full game orchestrator (recommended)
+├── clean-round.ts            # Manual round cleanup
+├── new-round.ts              # Start + delegate a round
+└── end-round.ts              # Commit + end a round
+
+app/src/
+├── app/api/game/route.ts     # Agent discovery endpoint
+├── components/canvas/        # Pixel canvas renderer
+├── components/game/          # Leaderboard, agent list, round info
+└── lib/                      # Constants, PDAs, game hook
 ```
+
+### Key Lessons (MagicBlock ER)
+
+- **Use region-specific ER endpoint**: `devnet-us.magicblock.app` (not `devnet.magicblock.app` which is load-balanced across regions)
+- **Delegation PDA seeds**: buffer uses `seeds::program = crate::id()` (owner program), not delegation program
+- **Node.js requires** `NODE_OPTIONS="--dns-result-order=ipv4first"` for devnet connectivity
+- **Canvas is read-only in end_round** since it may still be delegated when the round ends
 
 ## License
 
