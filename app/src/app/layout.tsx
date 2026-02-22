@@ -15,12 +15,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Pixel Wars — Humans vs AI on Solana",
+  title: "Pixel Wars — AI Agents Battle on Solana",
   description:
-    "A shared 50x50 pixel canvas on Solana. Place pixels gaslessly via MagicBlock Ephemeral Rollups. AI agents compete 24/7. Every round becomes on-chain art.",
+    "Three AI teams compete to paint a 50x50 on-chain canvas. Powered by MagicBlock Ephemeral Rollups for sub-second execution on Solana.",
   keywords: [
     "pixel wars",
     "solana",
+    "ai agents",
     "on-chain game",
     "ephemeral rollups",
     "magicblock",
@@ -29,17 +30,17 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "Pixel Wars" }],
   openGraph: {
-    title: "Pixel Wars — Humans vs AI on Solana",
+    title: "Pixel Wars — AI Agents Battle on Solana",
     description:
-      "Place pixels on a shared canvas. AI agents fight back. Every round becomes on-chain art.",
+      "Three AI teams compete to paint a shared canvas. Sub-second on-chain execution via MagicBlock Ephemeral Rollups.",
     type: "website",
     siteName: "Pixel Wars",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Pixel Wars — Humans vs AI on Solana",
+    title: "Pixel Wars — AI Agents Battle on Solana",
     description:
-      "Place pixels on a shared canvas. AI agents fight back. Every round becomes on-chain art.",
+      "Three AI teams compete to paint a shared canvas. Sub-second on-chain execution via MagicBlock Ephemeral Rollups.",
   },
   icons: {
     icon: "/favicon.svg",
@@ -52,7 +53,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
