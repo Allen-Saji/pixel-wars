@@ -1,28 +1,20 @@
-import { Program, AnchorProvider } from "@coral-xyz/anchor";
-import { Connection, PublicKey } from "@solana/web3.js";
-import type { PixelWars } from "./idl-types";
-import IDL_JSON from "./idl.json";
-import { PROGRAM_ID } from "./constants";
+import * as anchor from "@coral-xyz/anchor";
+import { Connection, Keypair } from "@solana/web3.js";
+import { L1_RPC_URL, ER_RPC_URL } from "./constants";
+import idl from "./idl.json";
 
-const IDL = IDL_JSON as PixelWars;
-
-export function getProgram(provider: AnchorProvider): Program<PixelWars> {
-  return new Program(IDL, provider);
+export function getProgram(connection: Connection, keypair: Keypair): anchor.Program {
+  const wallet = new anchor.Wallet(keypair);
+  const provider = new anchor.AnchorProvider(connection, wallet, {
+    commitment: "confirmed",
+  });
+  return new anchor.Program(idl as anchor.Idl, provider);
 }
 
-export function getReadonlyProgram(connection: Connection): Program<PixelWars> {
-  const provider = new AnchorProvider(
-    connection,
-    // Dummy wallet for read-only
-    {
-      publicKey: PublicKey.default,
-      signAllTransactions: async <T,>(txs: T[]) => txs,
-      signTransaction: async <T,>(tx: T) => tx,
-    } as never,
-    { commitment: "confirmed" }
-  );
-  return new Program(IDL, provider);
+export function getL1Connection(): Connection {
+  return new Connection(L1_RPC_URL, "confirmed");
 }
 
-export { PROGRAM_ID };
-export type { PixelWars };
+export function getERConnection(): Connection {
+  return new Connection(ER_RPC_URL, "confirmed");
+}
