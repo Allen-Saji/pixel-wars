@@ -327,31 +327,35 @@ export function useGame() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentRound]);
 
-  // Derive round end time from on-chain start slot timestamp
-  // Default round duration (180s) — the orchestrator typically runs 30-180s rounds
+  // Derive round end time — show timer IMMEDIATELY when round is active,
+  // then refine with on-chain data when available
   const DEFAULT_ROUND_DURATION_MS = 180_000;
   useEffect(() => {
-    if (!gameConfig?.roundActive || !roundInfo?.startSlot) {
+    if (!gameConfig?.roundActive) {
       setRoundEndTime(null);
       return;
     }
+    // Set an immediate fallback so the timer shows right away
+    setRoundEndTime(Date.now() + DEFAULT_ROUND_DURATION_MS);
+
     let cancelled = false;
     (async () => {
       try {
-        // First try the /api/timer endpoint (works when same serverless instance as orchestrator POST)
+        // Try /api/timer endpoint first (works if same serverless instance as orchestrator)
         const timerRes = await fetch("/api/timer").then(r => r.json()).catch(() => null);
         if (!cancelled && timerRes?.endTime && timerRes?.round === gameConfig.currentRound) {
           setRoundEndTime(timerRes.endTime);
           return;
         }
-        // Fallback: derive from on-chain slot timestamp
-        const blockTime = await l1Connection.getBlockTime(roundInfo.startSlot);
-        if (blockTime && !cancelled) {
-          setRoundEndTime(blockTime * 1000 + DEFAULT_ROUND_DURATION_MS);
+        // Refine with on-chain slot timestamp if available
+        if (roundInfo?.startSlot) {
+          const blockTime = await l1Connection.getBlockTime(roundInfo.startSlot);
+          if (blockTime && !cancelled) {
+            setRoundEndTime(blockTime * 1000 + DEFAULT_ROUND_DURATION_MS);
+          }
         }
       } catch {
-        // Last resort: use current time + default duration (better than no timer)
-        if (!cancelled) setRoundEndTime(Date.now() + DEFAULT_ROUND_DURATION_MS);
+        // Fallback already set above, nothing to do
       }
     })();
     return () => { cancelled = true; };
