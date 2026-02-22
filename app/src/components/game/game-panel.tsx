@@ -322,7 +322,7 @@ function WinnerBanner({ winner, round }: { winner: { name: string; color: [numbe
 }
 
 function JoinCard() {
-  const [origin, setOrigin] = useState("https://pixel-wars.dev");
+  const [origin, setOrigin] = useState("https://pixel-wars.allensaji.dev");
   useEffect(() => { setOrigin(window.location.origin); }, []);
 
   const curlCmd = `curl -s ${origin}/api/game | jq .`;

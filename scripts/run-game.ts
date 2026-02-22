@@ -161,7 +161,7 @@ async function main() {
 
   // Set timer via API (frontend reads this)
   try {
-    await fetch("http://localhost:3000/api/timer", {
+    await fetch("https://pixel-wars.allensaji.dev/api/timer", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ round: nextRound, endTime }),
@@ -212,7 +212,7 @@ async function main() {
   console.log("Round ended on-chain!");
 
   // Clear frontend timer
-  try { await fetch("http://localhost:3000/api/timer", { method: "DELETE" }); } catch {}
+  try { await fetch("https://pixel-wars.allensaji.dev/api/timer", { method: "DELETE" }); } catch {}
 
   // Kill agents (they should self-exit too via isRoundActive check)
   console.log("Stopping agents...");
